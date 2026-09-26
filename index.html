@@ -1,49 +1,406 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Physical Location</title>
-<style>
-body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4;color:#222}
-.container{max-width:900px;margin:50px auto;background:#fff;padding:25px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12)}
-h2{margin-top:0;border-bottom:1px solid #ddd;padding-bottom:12px}
-.row{padding:12px 0;border-bottom:1px solid #eee;display:flex;gap:15px}
-.label{width:180px;font-weight:bold}.value{flex:1;word-break:break-word}
-#status{margin-bottom:20px;color:#666}.error{color:#b00020}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physical Location</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #222;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.12);
+    }
+
+    h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 12px;
+    }
+
+    h3 {
+      margin-top: 30px;
+      margin-bottom: 5px;
+    }
+
+    .row {
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      gap: 15px;
+    }
+
+    .label {
+      width: 220px;
+      font-weight: bold;
+    }
+
+    .value {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    #status {
+      margin-bottom: 20px;
+      color: #666;
+    }
+
+    .error {
+      color: #b00020;
+    }
+
+    .success {
+      color: #16803c;
+    }
+  </style>
 </head>
+
 <body>
+
 <div class="container">
-<h2>Physical Location</h2>
-<div id="status">Loading location...</div>
-<div id="location"></div>
+
+  <h2>Physical Location</h2>
+
+  <div id="status">
+    Getting your location...
+  </div>
+
+  <h3>Device Location</h3>
+
+  <div id="deviceLocation">
+    <div class="row">
+      <div class="label">Status</div>
+      <div class="value">Waiting for location permission...</div>
+    </div>
+  </div>
+
+  <h3>IP Information</h3>
+
+  <div id="ipLocation">
+    <div class="row">
+      <div class="label">Status</div>
+      <div class="value">Loading...</div>
+    </div>
+  </div>
+
 </div>
+
 <script>
-async function loadLocation(){
-  const status=document.getElementById("status");
-  const box=document.getElementById("location");
-  try{
-    const response=await fetch("/.netlify/functions/location",{cache:"no-store"});
-    const data=await response.json();
-    if(!response.ok||!data.success) throw new Error(data.error||"Location lookup failed");
-    const fields=[
-      ["IP Address",data.ip],["Hostname",data.hostname],["City",data.city],
-      ["Region",data.region],["Country",data.country],
-      ["Location",data.latitude+", "+data.longitude],
-      ["Organization",data.organization],["Postal Code",data.postal],
-      ["Timezone",data.timezone]
-    ];
-    box.innerHTML=fields.map(([label,value])=>`<div class="row"><div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value??"N/A")}</div></div>`).join("");
-    status.textContent="Location information loaded.";
-  }catch(error){
-    status.className="error"; status.textContent=error.message;
+
+const statusBox = document.getElementById("status");
+const deviceBox = document.getElementById("deviceLocation");
+const ipBox = document.getElementById("ipLocation");
+
+
+function escapeHtml(value) {
+
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
+
+
+function showRows(container, rows) {
+
+  container.innerHTML = rows.map(function(row) {
+
+    return `
+      <div class="row">
+        <div class="label">${escapeHtml(row[0])}</div>
+        <div class="value">${escapeHtml(row[1])}</div>
+      </div>
+    `;
+
+  }).join("");
+
+}
+
+
+async function getIPInformation() {
+
+  try {
+
+    const response = await fetch(
+      "/.netlify/functions/location",
+      {
+        cache: "no-store"
+      }
+    );
+
+    const text = await response.text();
+
+    let data;
+
+    try {
+
+      data = JSON.parse(text);
+
+    } catch (error) {
+
+      throw new Error(
+        "Server returned an invalid response."
+      );
+
+    }
+
+
+    if (!response.ok || !data.success) {
+
+      throw new Error(
+        data.error || "IP information failed."
+      );
+
+    }
+
+
+    showRows(ipBox, [
+
+      ["IP Address", data.ip],
+
+      ["Hostname", data.hostname || "N/A"],
+
+      ["IP Version", data.version || "N/A"],
+
+      ["IP City (Approx.)", data.city || "N/A"],
+
+      ["IP Region (Approx.)", data.region || "N/A"],
+
+      ["IP Country", data.country || "N/A"],
+
+      ["IP Location (Approx.)",
+        data.latitude && data.longitude
+          ? data.latitude + ", " + data.longitude
+          : "N/A"
+      ],
+
+      ["IP Organization (Approx.)",
+        data.organization || "N/A"
+      ],
+
+      ["Postal Code", data.postal || "N/A"],
+
+      ["Timezone", data.timezone || "N/A"]
+
+    ]);
+
+
+    return data;
+
+  } catch (error) {
+
+    showRows(ipBox, [
+      ["Status", error.message]
+    ]);
+
+    return null;
+
   }
+
 }
-function escapeHtml(value){
- return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+
+
+function getDeviceLocation() {
+
+  if (!navigator.geolocation) {
+
+    statusBox.className = "error";
+
+    statusBox.textContent =
+      "Your browser does not support location services.";
+
+    showRows(deviceBox, [
+      ["Status", "Geolocation is not supported."]
+    ]);
+
+    return;
+
+  }
+
+
+  statusBox.textContent =
+    "Please allow location access in your browser...";
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    async function(position) {
+
+      const latitude =
+        position.coords.latitude;
+
+      const longitude =
+        position.coords.longitude;
+
+      const accuracy =
+        position.coords.accuracy;
+
+
+      showRows(deviceBox, [
+
+        ["Status", "Location detected"],
+
+        ["Latitude", latitude],
+
+        ["Longitude", longitude],
+
+        ["Accuracy", accuracy + " meters"],
+
+        ["Location Source", "Device / Browser GPS"]
+
+      ]);
+
+
+      statusBox.className = "success";
+
+      statusBox.textContent =
+        "Location information loaded.";
+
+
+      const ipData = await getIPInformation();
+
+
+      saveLocationInBackground({
+
+        device_latitude: latitude,
+
+        device_longitude: longitude,
+
+        device_accuracy: accuracy,
+
+        location_source: "Device / Browser GPS",
+
+        ip: ipData?.ip || "",
+
+        hostname: ipData?.hostname || "",
+
+        version: ipData?.version || "",
+
+        city: ipData?.city || "",
+
+        region: ipData?.region || "",
+
+        country: ipData?.country || "",
+
+        country_code: ipData?.country_code || "",
+
+        ip_latitude: ipData?.latitude || "",
+
+        ip_longitude: ipData?.longitude || "",
+
+        postal: ipData?.postal || "",
+
+        timezone: ipData?.timezone || "",
+
+        organization: ipData?.organization || ""
+
+      });
+
+    },
+
+    function(error) {
+
+      let message = "Unable to get device location.";
+
+      if (error.code === 1) {
+        message =
+          "Location permission was denied.";
+      }
+
+      if (error.code === 2) {
+        message =
+          "Device location is unavailable.";
+      }
+
+      if (error.code === 3) {
+        message =
+          "Location request timed out.";
+      }
+
+
+      statusBox.className = "error";
+
+      statusBox.textContent = message;
+
+
+      showRows(deviceBox, [
+        ["Status", message]
+      ]);
+
+
+      getIPInformation();
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+
+  );
+
 }
-loadLocation();
+
+
+function saveLocationInBackground(data) {
+
+  fetch(
+    "/.netlify/functions/save-location",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify(data),
+
+      keepalive: true
+
+    }
+  )
+  .then(function(response) {
+
+    return response.json();
+
+  })
+  .then(function(result) {
+
+    console.log(
+      "Location save:",
+      result
+    );
+
+  })
+  .catch(function(error) {
+
+    console.error(
+      "Background save failed:",
+      error
+    );
+
+  });
+
+}
+
+
+getDeviceLocation();
+
 </script>
+
 </body>
 </html>
