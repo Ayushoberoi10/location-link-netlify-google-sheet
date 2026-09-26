@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Physical Location</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4;color:#222}
+.container{max-width:900px;margin:50px auto;background:#fff;padding:25px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+h2{margin-top:0;border-bottom:1px solid #ddd;padding-bottom:12px}
+.row{padding:12px 0;border-bottom:1px solid #eee;display:flex;gap:15px}
+.label{width:180px;font-weight:bold}.value{flex:1;word-break:break-word}
+#status{margin-bottom:20px;color:#666}.error{color:#b00020}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Physical Location</h2>
+<div id="status">Loading location...</div>
+<div id="location"></div>
+</div>
+<script>
+async function loadLocation(){
+  const status=document.getElementById("status");
+  const box=document.getElementById("location");
+  try{
+    const response=await fetch("/.netlify/functions/location",{cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok||!data.success) throw new Error(data.error||"Location lookup failed");
+    const fields=[
+      ["IP Address",data.ip],["Hostname",data.hostname],["City",data.city],
+      ["Region",data.region],["Country",data.country],
+      ["Location",data.latitude+", "+data.longitude],
+      ["Organization",data.organization],["Postal Code",data.postal],
+      ["Timezone",data.timezone]
+    ];
+    box.innerHTML=fields.map(([label,value])=>`<div class="row"><div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value??"N/A")}</div></div>`).join("");
+    status.textContent="Location information loaded.";
+  }catch(error){
+    status.className="error"; status.textContent=error.message;
+  }
+}
+function escapeHtml(value){
+ return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+loadLocation();
+</script>
+</body>
+</html>
