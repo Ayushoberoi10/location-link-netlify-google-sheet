@@ -357,46 +357,30 @@ function getDeviceLocation() {
 
 
 function saveLocationInBackground(data) {
+  fetch("/.netlify/functions/save-location", {
+    method: "POST",
 
-  fetch(
-    "/.netlify/functions/save-location",
-    {
-      method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+    body: JSON.stringify(data),
 
-      body: JSON.stringify(data),
-
-      keepalive: true
-
-    }
-  )
+    keepalive: true
+  })
   .then(function(response) {
-
     return response.json();
-
   })
   .then(function(result) {
-
-    console.log(
-      "Location save:",
-      result
-    );
-
+    console.log("Google Sheet save result:", result);
   })
   .catch(function(error) {
-
     console.error(
-      "Background save failed:",
+      "Google Sheet save failed:",
       error
     );
-
   });
-
 }
-
 
 getDeviceLocation();
 
