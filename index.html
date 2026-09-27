@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Welcome</title>
+  <title>Access Check</title>
 
   <style>
     * {
@@ -17,505 +17,119 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #f5f6f8;
       font-family: Arial, sans-serif;
-      background: #f5f7fa;
     }
 
     .box {
       width: 90%;
       max-width: 420px;
-      background: #ffffff;
+      background: white;
       padding: 35px;
+      border-radius: 14px;
       text-align: center;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.08);
-    }
-
-    .icon {
-      width: 55px;
-      height: 55px;
-      margin: 0 auto 20px;
-      border-radius: 50%;
-      background: #eef3ff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 25px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
     }
 
     h2 {
-      margin: 0 0 10px;
+      margin: 0 0 12px;
       font-size: 22px;
     }
 
     p {
-      margin: 0;
-      color: #777;
-      font-size: 14px;
+      color: #666;
       line-height: 1.5;
+      font-size: 14px;
     }
 
-    #status {
+    .status {
       margin-top: 20px;
-      font-size: 13px;
-      color: #888;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .notice {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #777;
     }
   </style>
 </head>
 
 <body>
 
-<div class="box">
+  <div class="box">
 
-  <div class="icon">✓</div>
+    <h2>Access Check</h2>
 
-  <h2>Welcome</h2>
+    <p>
+      Please wait while we verify your connection.
+    </p>
 
-  <p>
-    Please allow location access to continue.
-  </p>
+    <div class="status" id="status">
+      Checking connection...
+    </div>
 
-  <div id="status">
-    Verifying...
+    <div class="notice">
+      This page records basic connection and browser information
+      for access verification.
+    </div>
+
   </div>
 
-</div>
 
-<script>
-
-function getDeviceType() {
-
-  const ua = navigator.userAgent || "";
-
-  if (/iPad|Tablet/i.test(ua)) {
-    return "Tablet";
-  }
-
-  if (/Android/i.test(ua) && !/Mobile/i.test(ua)) {
-    return "Tablet";
-  }
-
-  if (/Mobi|Android|iPhone|iPod/i.test(ua)) {
-    return "Phone";
-  }
-
-  return "Laptop/Desktop";
-}
-
-
-function getOperatingSystem() {
-
-  const ua = navigator.userAgent || "";
-  const platform = navigator.platform || "";
-
-  if (/Windows/i.test(ua)) {
-    return "Windows";
-  }
-
-  if (/Android/i.test(ua)) {
-    return "Android";
-  }
-
-  if (/iPhone|iPad|iPod/i.test(ua)) {
-    return "iOS";
-  }
-
-  if (/Mac OS X/i.test(ua) || /Mac/i.test(platform)) {
-    return "macOS";
-  }
-
-  if (/Linux/i.test(ua)) {
-    return "Linux";
-  }
-
-  return "Unknown";
-}
-
-
-function getBrowser() {
-
-  const ua = navigator.userAgent || "";
-
-  if (/Edg\//i.test(ua)) {
-    return "Microsoft Edge";
-  }
-
-  if (/OPR\//i.test(ua)) {
-    return "Opera";
-  }
-
-  if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) {
-    return "Google Chrome";
-  }
-
-  if (/Firefox\//i.test(ua)) {
-    return "Mozilla Firefox";
-  }
-
-  if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) {
-    return "Safari";
-  }
-
-  return "Unknown";
-}
-
-
-function getDeviceName() {
-
-  const ua = navigator.userAgent || "";
-
-  if (/iPhone/i.test(ua)) {
-    return "iPhone";
-  }
-
-  if (/iPad/i.test(ua)) {
-    return "iPad";
-  }
-
-  if (/Android/i.test(ua)) {
-
-    const match =
-      ua.match(/Android.*?;\s*([^;)]+?)(?:\s+Build\/|;|\))/i);
-
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-
-    return "Android Device";
-  }
-
-  if (/Windows/i.test(ua)) {
-    return "Windows Computer";
-  }
-
-  if (/Macintosh/i.test(ua)) {
-    return "Mac";
-  }
-
-  if (/Linux/i.test(ua)) {
-    return "Linux Computer";
-  }
-
-  return "Unknown";
-}
-
-
-function getDeviceInformation() {
-
-  return {
-
-    device_type:
-      getDeviceType(),
-
-    device_name:
-      getDeviceName(),
-
-    operating_system:
-      getOperatingSystem(),
-
-    browser:
-      getBrowser(),
-
-    browser_version:
-      navigator.userAgent || "",
-
-    platform:
-      navigator.platform || "",
-
-    language:
-      navigator.language || "",
-
-    screen_width:
-      window.screen.width || "",
-
-    screen_height:
-      window.screen.height || "",
-
-    color_depth:
-      window.screen.colorDepth || "",
-
-    timezone:
-      Intl.DateTimeFormat().resolvedOptions().timeZone || "",
-
-    cookies_enabled:
-      navigator.cookieEnabled ? "Yes" : "No"
-
-  };
-
-}
-
-
-async function getIPInformation() {
-
-  try {
-
-    const response = await fetch(
-      "/.netlify/functions/location",
-      {
-        cache: "no-store"
-      }
-    );
-
-    const data =
-      await response.json();
-
-    if (!response.ok || !data.success) {
-      return null;
-    }
-
-    return data;
-
-  } catch (error) {
-
-    console.error(
-      "IP lookup failed:",
-      error
-    );
-
-    return null;
-  }
-}
-
-
-function saveLocation(data) {
-
-  fetch(
-    "/.netlify/functions/save-location",
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify(data),
-
-      keepalive: true
-    }
-  )
-  .then(function(response) {
-    return response.json();
-  })
-  .then(function(result) {
-
-    console.log(
-      "Location saved:",
-      result
-    );
-
-    document.getElementById("status").textContent =
-      "Verification completed.";
-
-  })
-  .catch(function(error) {
-
-    console.error(
-      "Save failed:",
-      error
-    );
-
-    document.getElementById("status").textContent =
-      "Please continue.";
-
-  });
-
-}
-
-
-function requestLocation() {
-
-  if (!navigator.geolocation) {
-
-    document.getElementById("status").textContent =
-      "Location is not supported by this browser.";
-
-    return;
-  }
-
-
-  document.getElementById("status").textContent =
-    "Getting your location...";
-
-
-  navigator.geolocation.getCurrentPosition(
-
-    async function(position) {
-
-      const coords =
-        position.coords;
-
-      const device =
-        getDeviceInformation();
-
-      const ip =
-        await getIPInformation();
-
-
-      const mapsUrl =
-        "https://www.google.com/maps?q=" +
-        encodeURIComponent(
-          coords.latitude + "," + coords.longitude
+  <script>
+
+    async function checkConnection() {
+
+      const status = document.getElementById("status");
+
+      try {
+
+        const response = await fetch(
+          "/.netlify/functions/location",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              page: window.location.href,
+              referrer: document.referrer || ""
+            })
+          }
         );
 
+        const result = await response.json();
 
-      const data = {
+        if (result.success) {
 
-        timestamp:
-          new Date().toISOString(),
+          status.textContent =
+            "Connection verified.";
 
-        device_type:
-          device.device_type,
+        } else {
 
-        device_name:
-          device.device_name,
+          status.textContent =
+            "Connection verification failed.";
 
-        operating_system:
-          device.operating_system,
+          console.error(result);
 
-        browser:
-          device.browser,
+        }
 
-        browser_version:
-          device.browser_version,
+      } catch (error) {
 
-        platform:
-          device.platform,
+        status.textContent =
+          "Connection verification failed.";
 
-        language:
-          device.language,
+        console.error(error);
 
-        screen_width:
-          device.screen_width,
-
-        screen_height:
-          device.screen_height,
-
-        color_depth:
-          device.color_depth,
-
-        device_timezone:
-          device.timezone,
-
-        cookies_enabled:
-          device.cookies_enabled,
-
-
-        ip:
-          ip?.ip || "",
-
-        hostname:
-          ip?.hostname || "",
-
-        ip_version:
-          ip?.version || "",
-
-        ip_city:
-          ip?.city || "",
-
-        ip_region:
-          ip?.region || "",
-
-        ip_country:
-          ip?.country || "",
-
-        ip_country_code:
-          ip?.country_code || "",
-
-        ip_latitude:
-          ip?.latitude || "",
-
-        ip_longitude:
-          ip?.longitude || "",
-
-        ip_organization:
-          ip?.organization || "",
-
-        ip_postal:
-          ip?.postal || "",
-
-        ip_timezone:
-          ip?.timezone || "",
-
-
-        latitude:
-          coords.latitude,
-
-        longitude:
-          coords.longitude,
-
-        accuracy:
-          coords.accuracy,
-
-        altitude:
-          coords.altitude ?? "",
-
-        altitude_accuracy:
-          coords.altitudeAccuracy ?? "",
-
-        heading:
-          coords.heading ?? "",
-
-        speed:
-          coords.speed ?? "",
-
-        location_timestamp:
-          position.timestamp
-            ? new Date(position.timestamp).toISOString()
-            : "",
-
-        google_maps:
-          mapsUrl,
-
-        location_source:
-          "Device / Browser Geolocation"
-
-      };
-
-
-      saveLocation(data);
-
-    },
-
-
-    function(error) {
-
-      let message =
-        "Unable to get location.";
-
-      if (error.code === 1) {
-        message =
-          "Location permission was denied.";
       }
 
-      if (error.code === 2) {
-        message =
-          "Location is unavailable.";
-      }
-
-      if (error.code === 3) {
-        message =
-          "Location request timed out.";
-      }
-
-      document.getElementById("status").textContent =
-        message;
-
-    },
-
-
-    {
-      enableHighAccuracy: true,
-      timeout: 30000,
-      maximumAge: 0
     }
 
-  );
-}
+    checkConnection();
 
-
-requestLocation();
-
-</script>
+  </script>
 
 </body>
 </html>
