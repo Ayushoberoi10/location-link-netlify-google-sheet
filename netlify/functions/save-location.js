@@ -7,7 +7,7 @@ exports.handler = async function (event) {
     const data = JSON.parse(event.body);
 
     const sheetWebhook =
-      "https://script.google.com/macros/s/AKfycbxsOhdYtQHdYkxM0d5jNTRtE29v4gtIl0yI0hXMGSGfANTGXS-9PYXbH35W0_6178qB/exec";
+      "https://script.google.com/macros/s/AKfycbxbw8gTGuP8GQzY8ijva4xJe3y5h9l4iNQ-ZbZe2wMAQBGU27kV5jJe9b6Ejsdxks7W/exec";
 
     const response = await fetch(sheetWebhook, {
       method: "POST",
