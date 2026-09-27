@@ -15,15 +15,23 @@ exports.handler = async function (event) {
       JSON.parse(event.body);
 
 
-    const sheetWebhook =
-      "https://script.google.com/macros/s/AKfycbxbw8gTGuP8GQzY8ijva4xJe3y5h9l4iNQ-ZbZe2wMAQBGU27kV5jJe9b6Ejsdxks7W/exec";
+    const webhook =
+      process.env.GOOGLE_SHEET_WEBHOOK;
+
+
+    if (!webhook) {
+
+      throw new Error(
+        "GOOGLE_SHEET_WEBHOOK is not configured."
+      );
+
+    }
 
 
     const response =
       await fetch(
-        sheetWebhook,
+        webhook,
         {
-
           method: "POST",
 
           headers: {
@@ -32,28 +40,29 @@ exports.handler = async function (event) {
           },
 
           body:
-            JSON.stringify(data),
-
-          redirect:
-            "follow"
-
+            JSON.stringify(data)
         }
       );
 
 
-    const responseText =
+    const text =
       await response.text();
 
 
-    console.log(
-      "Google Sheet status:",
-      response.status
-    );
+    let result;
 
-    console.log(
-      "Google Sheet response:",
-      responseText
-    );
+    try {
+
+      result =
+        JSON.parse(text);
+
+    } catch {
+
+      result = {
+        raw: text
+      };
+
+    }
 
 
     if (!response.ok) {
@@ -83,8 +92,8 @@ exports.handler = async function (event) {
           message:
             "Location saved successfully",
 
-          sheet_response:
-            responseText
+          sheet:
+            result
 
         })
 
@@ -93,10 +102,7 @@ exports.handler = async function (event) {
 
   } catch (error) {
 
-    console.error(
-      "Save location error:",
-      error
-    );
+    console.error(error);
 
 
     return {
@@ -115,7 +121,7 @@ exports.handler = async function (event) {
 
           error:
             error.message ||
-            "Unable to save location"
+            "Failed to save location."
 
         })
 

@@ -1,208 +1,166 @@
 exports.handler = async function (event) {
+
   try {
+
     const headers = event.headers || {};
 
-    const getHeader = (name) => {
-      const key = Object.keys(headers).find(
-        (k) => k.toLowerCase() === name.toLowerCase()
-      );
-      return key ? headers[key] : "";
-    };
+    function getHeader(name) {
 
-    const forwardedFor =
-      getHeader("x-forwarded-for") ||
-      getHeader("x-real-ip") ||
-      "";
+      const key = Object.keys(headers).find(
+        k => k.toLowerCase() === name.toLowerCase()
+      );
+
+      return key ? headers[key] : "";
+    }
+
 
     const netlifyIp =
-      getHeader("x-nf-client-connection-ip") ||
-      "";
+      getHeader("x-nf-client-connection-ip");
+
+    const forwardedFor =
+      getHeader("x-forwarded-for");
+
 
     let clientIp = "";
 
     if (netlifyIp) {
+
       clientIp = netlifyIp.trim();
+
     } else if (forwardedFor) {
-      clientIp = forwardedFor.split(",")[0].trim();
+
+      clientIp =
+        forwardedFor.split(",")[0].trim();
+
     }
+
 
     if (!clientIp) {
-      clientIp = "unknown";
+
+      throw new Error(
+        "Unable to determine IP address."
+      );
+
     }
 
-    const userAgent = getHeader("user-agent") || "";
-    const acceptLanguage = getHeader("accept-language") || "";
 
-    let ipData = {};
-
-    if (clientIp !== "unknown") {
-      try {
-        const ipResponse = await fetch(
-          `https://ipapi.co/${encodeURIComponent(clientIp)}/json/`,
-          {
-            headers: {
-              "User-Agent": "Location-Link-Netlify/1.0"
-            }
-          }
-        );
-
-        if (ipResponse.ok) {
-          const text = await ipResponse.text();
-
-          try {
-            ipData = JSON.parse(text);
-          } catch (e) {
-            ipData = {};
-          }
+    const response = await fetch(
+      `https://ipapi.co/${encodeURIComponent(clientIp)}/json/`,
+      {
+        headers: {
+          "User-Agent": "LocationVerification/1.0"
         }
-      } catch (e) {
-        ipData = {};
       }
+    );
+
+
+    const text = await response.text();
+
+    let geo;
+
+    try {
+
+      geo = JSON.parse(text);
+
+    } catch {
+
+      throw new Error(
+        "IP geolocation service returned invalid data."
+      );
+
     }
 
-    const deviceInfo = parseUserAgent(userAgent);
 
-    const data = {
-      timestamp: new Date().toISOString(),
+    if (geo.error) {
 
-      ip: ipData.ip || clientIp,
-      hostname: ipData.hostname || "",
-      version: ipData.version || "",
+      throw new Error(
+        geo.reason || "IP geolocation failed."
+      );
 
-      city: ipData.city || "",
-      region: ipData.region || "",
-      country: ipData.country_name || ipData.country || "",
+    }
 
-      ip_latitude: ipData.latitude ?? "",
-      ip_longitude: ipData.longitude ?? "",
 
-      organization: ipData.org || "",
-      asn: ipData.asn || "",
+    return {
 
-      postal: ipData.postal || "",
-      timezone: ipData.timezone || "",
+      statusCode: 200,
 
-      device_type: deviceInfo.deviceType,
-      operating_system: deviceInfo.os,
-      browser: deviceInfo.browser,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
 
-      user_agent: userAgent,
-      language: acceptLanguage,
+      body: JSON.stringify({
 
-      location_source: "IP Geolocation",
+        success: true,
 
-      google_maps_location:
-        ipData.latitude != null && ipData.longitude != null
-          ? `https://www.google.com/maps?q=${ipData.latitude},${ipData.longitude}`
-          : ""
+        ip:
+          geo.ip || clientIp,
+
+        hostname:
+          geo.hostname || "",
+
+        version:
+          geo.version || "",
+
+        city:
+          geo.city || "",
+
+        region:
+          geo.region || "",
+
+        country:
+          geo.country_name ||
+          geo.country ||
+          "",
+
+        latitude:
+          geo.latitude ?? "",
+
+        longitude:
+          geo.longitude ?? "",
+
+        organization:
+          geo.org || "",
+
+        asn:
+          geo.asn || "",
+
+        postal:
+          geo.postal || "",
+
+        timezone:
+          geo.timezone || ""
+
+      })
+
     };
 
-    const sheetWebhook = process.env.GOOGLE_SHEET_WEBHOOK;
 
-    if (!sheetWebhook) {
-      throw new Error("GOOGLE_SHEET_WEBHOOK is not configured");
-    }
+  } catch (error) {
 
-    const sheetResponse = await fetch(sheetWebhook, {
-      method: "POST",
+    console.error(error);
+
+
+    return {
+
+      statusCode: 500,
+
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(data)
-    });
 
-    const sheetText = await sheetResponse.text();
-
-    let sheetResult = {};
-
-    try {
-      sheetResult = JSON.parse(sheetText);
-    } catch (e) {
-      sheetResult = {
-        raw: sheetText
-      };
-    }
-
-    if (!sheetResponse.ok) {
-      throw new Error(
-        `Google Sheet returned HTTP ${sheetResponse.status}`
-      );
-    }
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store"
-      },
       body: JSON.stringify({
-        success: true,
-        saved: true,
-        data: data,
-        sheet: sheetResult
-      })
-    };
 
-  } catch (error) {
-    console.error("Location function error:", error);
-
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store"
-      },
-      body: JSON.stringify({
         success: false,
-        saved: false,
-        error: error.message || "Location lookup failed"
+
+        error:
+          error.message ||
+          "IP lookup failed."
+
       })
+
     };
+
   }
+
 };
-
-
-function parseUserAgent(userAgent) {
-
-  let deviceType = "Desktop";
-  let os = "Unknown";
-  let browser = "Unknown";
-
-  if (/iPhone/i.test(userAgent)) {
-    deviceType = "Mobile";
-    os = "iOS";
-  } else if (/iPad/i.test(userAgent)) {
-    deviceType = "Tablet";
-    os = "iPadOS";
-  } else if (/Android/i.test(userAgent)) {
-    deviceType = "Mobile";
-    os = "Android";
-  } else if (/Windows/i.test(userAgent)) {
-    deviceType = "Desktop";
-    os = "Windows";
-  } else if (/Mac OS X/i.test(userAgent)) {
-    deviceType = "Desktop";
-    os = "macOS";
-  } else if (/Linux/i.test(userAgent)) {
-    deviceType = "Desktop";
-    os = "Linux";
-  }
-
-  if (/Edg\//i.test(userAgent)) {
-    browser = "Microsoft Edge";
-  } else if (/OPR\//i.test(userAgent)) {
-    browser = "Opera";
-  } else if (/Chrome\//i.test(userAgent) && !/Edg\//i.test(userAgent)) {
-    browser = "Google Chrome";
-  } else if (/Firefox\//i.test(userAgent)) {
-    browser = "Mozilla Firefox";
-  } else if (/Safari\//i.test(userAgent) && !/Chrome\//i.test(userAgent)) {
-    browser = "Safari";
-  }
-
-  return {
-    deviceType,
-    os,
-    browser
-  };
-}
