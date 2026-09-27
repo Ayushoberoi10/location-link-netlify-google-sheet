@@ -25,21 +25,20 @@ exports.handler = async function (event) {
     );
 
 
-    const responseText =
+    const text =
       await response.text();
 
 
     let geo;
 
-
     try {
 
-      geo = JSON.parse(responseText);
+      geo = JSON.parse(text);
 
     } catch (error) {
 
       throw new Error(
-        "Geolocation service returned invalid data."
+        "IP service returned invalid data."
       );
 
     }
@@ -49,7 +48,7 @@ exports.handler = async function (event) {
 
       throw new Error(
         geo.message ||
-        "IP geolocation failed."
+        "IP lookup failed."
       );
 
     }
@@ -59,20 +58,25 @@ exports.handler = async function (event) {
 
       success: true,
 
-      ip: geo.ip || clientIp,
+      ip:
+        geo.ip || clientIp,
 
-      hostname: "",
+      hostname:
+        "",
 
       version:
         clientIp.includes(":")
           ? "IPv6"
           : "IPv4",
 
-      city: geo.city || "",
+      city:
+        geo.city || "",
 
-      region: geo.region || "",
+      region:
+        geo.region || "",
 
-      country: geo.country || "",
+      country:
+        geo.country || "",
 
       country_code:
         geo.country_code || "",
@@ -122,7 +126,7 @@ exports.handler = async function (event) {
   } catch (error) {
 
     console.error(
-      "Location error:",
+      "IP location error:",
       error
     );
 
@@ -142,7 +146,7 @@ exports.handler = async function (event) {
 
         error:
           error.message ||
-          "Location lookup failed"
+          "IP lookup failed"
 
       })
 

